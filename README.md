@@ -1,50 +1,25 @@
-# Welcome to your Expo app 👋
+# 📱 TechMarket RDC - Boutique Tech Haute Performance
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Une application mobile moderne d'e-commerce spécialisée dans le matériel High-Tech, propulsée par **React Native** et **Expo**.
 
-## Get started
+## 🚀 Vision du Projet
+Offrir une expérience d'achat fluide et sécurisée en République Démocratique du Congo, avec une interface inspirée des plus grands standards internationaux (Apple, Amazon).
 
-1. Install dependencies
+## ✨ Fonctionnalités Clés
+* **Interface Moderne** : Design épuré avec ombres douces et navigation par onglets.
+* **Parallax Scroll** : Effets visuels immersifs sur les pages de catégories.
+* **Géo-localisation** : Intégration de `expo-location` pour la livraison.
+* **Sécurité** : Validation des schémas de données avec **Zod**.
 
-   ```bash
-   npm install
-   ```
+## 🛠️ Stack Technique
+- **Framework** : React Native (Expo SDK 52)
+- **Langage** : TypeScript
+- **Navigation** : Expo Router (File-based routing)
+- **Déploiement** : EAS (Expo Application Services)
 
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
+## 📦 Installation
 ```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+git clone [https://github.com/ahmedkabre226/TechMarketApp.git](https://github.com/ahmedkabre226/TechMarketApp.git)
+cd TechMarketApp
+npm install
+npx expo start
