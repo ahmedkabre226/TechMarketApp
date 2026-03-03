@@ -7,9 +7,10 @@ interface ProductCardProps {
   item: {
     id: string;
     name: string;
-    price: string;
-    originalPrice?: string;
-    image: any;
+    price: string | number;
+    originalPrice?: string | number;
+    image?: any;
+    image_url?: string;
     category: string;
     rating?: number;
     reviews?: number;
@@ -22,6 +23,13 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ item, onPress, style, showDetails = false }: ProductCardProps) {
+  // LOGIQUE DE SOURCE D'IMAGE :
+  // Si image_url existe (Backend Supabase), on utilise uri. 
+  // Sinon, on utilise l'image locale (require).
+  const imageSource = item.image_url 
+    ? { uri: item.image_url } 
+    : item.image;
+
   return (
     <TouchableOpacity
       style={[styles.productCard, style]}
@@ -38,7 +46,7 @@ export default function ProductCard({ item, onPress, style, showDetails = false 
         </View>
       )}
       <Image
-        source={item.image}
+        source={imageSource}
         style={styles.productImage}
         contentFit="contain"
       />
@@ -50,7 +58,9 @@ export default function ProductCard({ item, onPress, style, showDetails = false 
         <View style={styles.ratingContainer}>
           <Ionicons name="star" size={16} color="#FFA41C" />
           <ThemedText style={styles.ratingText}>{item.rating}</ThemedText>
-          <ThemedText style={styles.reviewsText}>({item.reviews})</ThemedText>
+          {item.reviews && (
+            <ThemedText style={styles.reviewsText}>({item.reviews})</ThemedText>
+          )}
         </View>
       )}
       
@@ -154,3 +164,4 @@ const styles = StyleSheet.create({
     textDecorationLine: "line-through",
   },
 });
+

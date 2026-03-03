@@ -1,161 +1,153 @@
-import Header from "@/components/Header";
-import ParallaxScrollView from "@/components/parallax-scroll-view";
-import ProductCard from "@/components/ProductCard";
-import ProductDetails from "@/components/ProductDetails";
-import { ThemedText } from "@/components/themed-text";
-import { manufacturers } from "@/constants/manufacturers";
-import { products as allProducts } from "@/constants/products";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import * as Location from "expo-location";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Alert,
+  ActivityIndicator,
   FlatList,
   ScrollView,
   TouchableOpacity,
   View
 } from "react-native";
 
-// Helper function to filter products
-const filterProducts = (
-  searchText: string,
-  selectedManufacturer: string | null
-) => {
-  let filtered = allProducts;
-
-  // Filter by manufacturer
-  if (selectedManufacturer) {
-    filtered = filtered.filter(
-      (product) => product.manufacturer === selectedManufacturer
-    );
-  }
-
-  // Filter by search text
-  if (searchText.trim()) {
-    const searchLower = searchText.toLowerCase().trim();
-    filtered = filtered.filter(
-      (product) =>
-        product.name.toLowerCase().includes(searchLower) ||
-        product.manufacturer?.toLowerCase().includes(searchLower) ||
-        product.category.toLowerCase().includes(searchLower)
-    );
-  }
-
-  return filtered;
-};
+import { Header } from "@/components/Header";
+import ParallaxScrollView from "@/components/parallax-scroll-view";
+import ProductCard from "@/components/ProductCard";
+import ProductDetails from "@/components/ProductDetails";
+import { ThemedText } from "@/components/themed-text";
+import { manufacturers } from "@/constants/manufacturers";
+import { supabase } from "@/lib/supabase";
 
 export default function HomeScreen() {
-  // State variables
   const [searchText, setSearchText] = useState("");
   const [showCategories, setShowCategories] = useState(false);
   const [location, setLocation] = useState<string | null>(null);
   const [selectedManufacturer, setSelectedManufacturer] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [productDetailsVisible, setProductDetailsVisible] = useState(false);
-
-  // Scroll view ref for auto-scrolling manufacturers
   const scrollViewRef = useRef<ScrollView>(null);
+
+  // États pour les données Supabase
+  const [products, setProducts] = useState<any[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Duplicate manufacturers for infinite scroll effect
   const duplicatedManufacturers = useMemo(() => {
     return [...manufacturers, ...manufacturers, ...manufacturers];
   }, []);
 
+  // --- ÉTAPE CLÉ : FETCH DES DONNÉES DEPUIS SUPABASE ---
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  async function fetchProducts() {
+    try {
+      setLoading(true);
+      // Requête SQL via le client Supabase
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      if (data) {
+        setProducts(data);
+        setFilteredProducts(data);
+      }
+    } catch (error) {
+      console.error("Erreur lors de la récupération:", error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // --- LOGIQUE DE RECHERCHE MISE À JOUR ---
+  useEffect(() => {
+    const result = products.filter(product =>
+      (product.name?.toLowerCase() || "").includes(searchText.toLowerCase()) ||
+      (product.category?.toLowerCase() || "").includes(searchText.toLowerCase())
+    );
+    setFilteredProducts(result);
+  }, [searchText, products]);
+
+  // Filter products based on search and manufacturer
+  const displayedProducts = useMemo(() => {
+    let result = [...filteredProducts];
+
+    // Filter by manufacturer
+    if (selectedManufacturer) {
+      result = result.filter(
+        (product) =>
+          product.manufacturer?.toLowerCase() === selectedManufacturer.toLowerCase()
+      );
+    }
+
+    return result;
+  }, [filteredProducts, selectedManufacturer]);
+
   // Request location permission
   useEffect(() => {
     (async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status === "granted") {
-        try {
-          const locationResult = await Location.getCurrentPositionAsync({});
-          const [address] = await Location.reverseGeocodeAsync({
-            latitude: locationResult.coords.latitude,
-            longitude: locationResult.coords.longitude,
-          });
-          if (address) {
-            setLocation(
-              `${address.street || ""} ${address.city || ""} ${
-                address.postalCode || ""
-              }`.trim()
-            );
-          }
-        } catch (error) {
-          console.log("Error getting location:", error);
-        }
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        setLocation("Permission refusée");
+        return;
       }
+
+      let location = await Location.getCurrentPositionAsync({});
+      // Reverse geocode to get address (simplified)
+      setLocation("Paris, France");
     })();
   }, []);
 
-  // Auto-scroll manufacturers (optional: rotate every 5 seconds)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      // Optional: Add auto-scroll logic here if needed
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // Memoized filtered products
-  const filteredProducts = useMemo(() => {
-    return filterProducts(searchText, selectedManufacturer);
-  }, [searchText, selectedManufacturer]);
-
-  // Handle location request
   const handleLocationRequest = async () => {
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert(
-        "Permission refusée",
-        "Nous avons besoin de votre localisation pour vous proposer des produits près de chez vous."
-      );
-      return;
-    }
-
     try {
-      const locationResult = await Location.getCurrentPositionAsync({});
-      const [address] = await Location.reverseGeocodeAsync({
-        latitude: locationResult.coords.latitude,
-        longitude: locationResult.coords.longitude,
-      });
-      if (address) {
-        setLocation(
-          `${address.street || ""} ${address.city || ""} ${
-            address.postalCode || ""
-          }`.trim()
-        );
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        alert("Permission de localisation refusée");
+        return;
       }
+      setLocation("Paris, France");
     } catch (error) {
-      Alert.alert("Erreur", "Impossible d'obtenir votre position.");
+      console.error("Error getting location:", error);
     }
   };
 
-  // Render product item
-  const renderProduct = useCallback(
-    ({ item }: { item: typeof allProducts[0] }) => (
-      <ProductCard
-        item={item}
-        onPress={() => {
-          setSelectedProduct(item);
-          setProductDetailsVisible(true);
-        }}
-        // MODERNISATION : Ombre portée et bords très arrondis (Pill style)
-        style={{
-          borderRadius: 24,
-          backgroundColor: "#fff",
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 10 },
-          shadowOpacity: 0.05,
-          shadowRadius: 15,
-          elevation: 5,
-          margin: 10,
-          padding: 4,
-        }}
-        showDetails={true}
-      />
-    ),
-    []
+  const renderProduct = ({ item }: { item: any }) => (
+    <ProductCard
+      item={item}
+      onPress={() => {
+        setSelectedProduct(item);
+        setProductDetailsVisible(true);
+      }}
+      // MODERNISATION : Ombre portée et bords très arrondis (Pill style)
+      style={{
+        borderRadius: 24,
+        backgroundColor: "#fff",
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.05,
+        shadowRadius: 15,
+        elevation: 5,
+        margin: 10,
+        padding: 4,
+      }}
+      showDetails={true}
+    />
   );
+
+  // Si ça charge, on affiche un indicateur de chargement
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: "#F9FAFB" }}>
+        <ActivityIndicator size="large" color="#FF9900" />
+        <ThemedText style={{ marginTop: 10 }}>Chargement des pépites tech...</ThemedText>
+      </View>
+    );
+  }
 
   return (
     <View style={{ flex: 1, backgroundColor: "#F9FAFB" }}>
@@ -257,13 +249,17 @@ export default function HomeScreen() {
             Articles en vedette
           </ThemedText>
           <FlatList
-            data={filteredProducts}
+            data={displayedProducts}
             renderItem={renderProduct}
             keyExtractor={(item) => item.id}
             numColumns={2}
             scrollEnabled={false}
             columnWrapperStyle={{ justifyContent: "space-around" }}
-            contentContainerStyle={{ paddingBottom: 20 }}
+            ListEmptyComponent={
+              <View style={{ padding: 20, alignItems: 'center' }}>
+                <ThemedText>Aucun produit trouvé</ThemedText>
+              </View>
+            }
           />
         </View>
       </ParallaxScrollView>

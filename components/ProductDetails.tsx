@@ -2,6 +2,7 @@ import { Image } from "expo-image";
 import { useState } from "react";
 import {
   Alert,
+  Linking,
   Modal,
   ScrollView,
   StyleSheet,
@@ -40,21 +41,47 @@ export default function ProductDetails({
   visible,
   onClose,
 }: ProductDetailsProps) {
-  if (!product) return null;
-
   const [zoomScale, setZoomScale] = useState<number>(1);
   const [imageOffset, setImageOffset] = useState<{ x: number; y: number }>({
     x: 0,
     y: 0,
   });
 
+  if (!product) return null;
+
   //Suprimer les codes inutiles ci-dessous :
   const handleAddToCart = () => {
     Alert.alert("Panier", `${product.name} ajouté au panier !`);
   };
 
-  const handleBuyNow = () => {
-    Alert.alert("Achat", `Procéder à l'achat de ${product.name}`);
+  const handleBuyNow = async () => {
+    // Numéro WhatsApp
+    const phoneNumber = "+243853242111";
+    
+    // Message formaté avec les informations du produit
+    const message = `*Nouvelle commande depuis TechMarket*\n\n` +
+      `*Produit:* ${product.name}\n` +
+      `*Prix:* ${product.price || "Prix sur demande"}\n` +
+      `*Catégorie:* ${product.category}\n` +
+      `*Marque:* ${product.name.split(" ")[0]}\n\n` +
+      `Je souhaite passer cette commande. Merci de me contacter pour finaliser l'achat.`;
+
+    // Encoder le message pour l'URL
+    const encodedMessage = encodeURIComponent(message);
+    
+    // Créer l'URL WhatsApp
+    const whatsappUrl = `whatsapp://send?phone=${phoneNumber}&text=${encodedMessage}`;
+    
+    // Essayer d'ouvrir WhatsApp
+    const canOpen = await Linking.canOpenURL(whatsappUrl);
+    
+    if (canOpen) {
+      await Linking.openURL(whatsappUrl);
+    } else {
+      // Si WhatsApp n'est pas installé, essayer avec l'URL web
+      const webWhatsappUrl = `https://wa.me/${phoneNumber.replace(/[^0-9]/g, '')}?text=${encodedMessage}`;
+      await Linking.openURL(webWhatsappUrl);
+    }
   };
 
   const handleZoomIn = () => {

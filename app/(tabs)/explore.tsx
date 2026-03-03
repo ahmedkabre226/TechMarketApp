@@ -1,77 +1,72 @@
-import Header from "@/components/Header";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { useMemo, useState } from "react";
+import { FlatList, TouchableOpacity, View } from "react-native";
+
+import { Header } from "@/components/Header";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import ProductCard from "@/components/ProductCard";
 import ProductDetails from "@/components/ProductDetails";
 import { ThemedText } from "@/components/themed-text";
-import { categories } from "@/constants/categories";
-import { products as allProducts } from "@/constants/products";
-import { Ionicons } from "@expo/vector-icons";
-import { useCallback, useMemo, useState } from "react";
-import { FlatList, TouchableOpacity, View } from "react-native";
-
-// Helper function to filter products
-const filterProducts = (
-  searchText: string,
-  selectedCategory: string
-) => {
-  let filtered = allProducts;
-
-  // Filter by category
-  if (selectedCategory && selectedCategory !== "Tous") {
-    filtered = filtered.filter(
-      (product) => product.category === selectedCategory
-    );
-  }
-
-  // Filter by search text
-  if (searchText.trim()) {
-    const searchLower = searchText.toLowerCase().trim();
-    filtered = filtered.filter(
-      (product) =>
-        product.name.toLowerCase().includes(searchLower) ||
-        product.manufacturer?.toLowerCase().includes(searchLower) ||
-        product.category.toLowerCase().includes(searchLower)
-    );
-  }
-
-  return filtered;
-};
+import { categories } from "@/constants/exploreCategories";
+import { products as exploreProducts } from "@/constants/exploreProducts";
 
 export default function ExploreScreen() {
   const [searchText, setSearchText] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Tous");
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [productDetailsVisible, setProductDetailsVisible] = useState(false);
+  const router = useRouter();
 
-  // Memoized filtered products
+  // Filter products based on search and category
   const filteredProducts = useMemo(() => {
-    return filterProducts(searchText, selectedCategory);
+    let result = [...exploreProducts];
+
+    // Filter by category
+    if (selectedCategory !== "Tous") {
+      result = result.filter(
+        (product) =>
+          product.category.toLowerCase() === selectedCategory.toLowerCase()
+      );
+    }
+
+    // Filter by search text
+    if (searchText.trim()) {
+      const searchLower = searchText.toLowerCase().trim();
+      result = result.filter((product) => {
+        const nameMatch = product.name.toLowerCase().includes(searchLower);
+        const categoryMatch = product.category
+          .toLowerCase()
+          .includes(searchLower);
+        const manufacturerMatch = product.manufacturer
+          ?.toLowerCase()
+          .includes(searchLower);
+        return nameMatch || categoryMatch || manufacturerMatch;
+      });
+    }
+
+    return result;
   }, [searchText, selectedCategory]);
 
-  // Render product item
-  const renderProduct = useCallback(
-    ({ item }: { item: typeof allProducts[0] }) => (
-      <ProductCard
-        item={item}
-        onPress={() => {
-          setSelectedProduct(item);
-          setProductDetailsVisible(true);
-        }}
-        style={{
-          borderRadius: 16,
-          backgroundColor: '#fff',
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.08,
-          shadowRadius: 12,
-          elevation: 3,
-          margin: 6,
-          padding: 4
-        }}
-        showDetails={true}
-      />
-    ),
-    []
+  const renderProduct = ({ item }: { item: typeof exploreProducts[0] }) => (
+    <ProductCard
+      item={item}
+      onPress={() => {
+        setSelectedProduct(item);
+        setProductDetailsVisible(true);
+      }}
+      style={{
+        borderRadius: 16,
+        backgroundColor: "#fff",
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 3,
+        margin: 6,
+      }}
+      showDetails={true}
+    />
   );
 
   return (
@@ -83,11 +78,11 @@ export default function ExploreScreen() {
       >
         {/* TITRE DE PAGE DYNAMIQUE */}
         <View style={{ padding: 20 }}>
-          <ThemedText style={{ fontSize: 32, fontWeight: "800" }}>
+          <ThemedText style={{ fontSize: 32, fontWeight: '800' }}>
             Trouvez votre Tech
           </ThemedText>
           <ThemedText style={{ color: "#8E8E93", marginTop: 4 }}>
-            Explorez plus de {allProducts.length} produits
+            Explorez plus de 500 produits
           </ThemedText>
         </View>
 
@@ -147,7 +142,7 @@ export default function ExploreScreen() {
             keyExtractor={(item) => `explore-${item.id}`}
             numColumns={2}
             scrollEnabled={false}
-            contentContainerStyle={{ paddingBottom: 20 }}
+            columnWrapperStyle={{ justifyContent: "space-around" }}
           />
         </View>
       </ParallaxScrollView>
