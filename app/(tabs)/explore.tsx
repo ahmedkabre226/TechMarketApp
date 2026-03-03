@@ -1,0 +1,163 @@
+import Header from "@/components/Header";
+import ParallaxScrollView from "@/components/parallax-scroll-view";
+import ProductCard from "@/components/ProductCard";
+import ProductDetails from "@/components/ProductDetails";
+import { ThemedText } from "@/components/themed-text";
+import { categories } from "@/constants/categories";
+import { products as allProducts } from "@/constants/products";
+import { Ionicons } from "@expo/vector-icons";
+import { useCallback, useMemo, useState } from "react";
+import { FlatList, TouchableOpacity, View } from "react-native";
+
+// Helper function to filter products
+const filterProducts = (
+  searchText: string,
+  selectedCategory: string
+) => {
+  let filtered = allProducts;
+
+  // Filter by category
+  if (selectedCategory && selectedCategory !== "Tous") {
+    filtered = filtered.filter(
+      (product) => product.category === selectedCategory
+    );
+  }
+
+  // Filter by search text
+  if (searchText.trim()) {
+    const searchLower = searchText.toLowerCase().trim();
+    filtered = filtered.filter(
+      (product) =>
+        product.name.toLowerCase().includes(searchLower) ||
+        product.manufacturer?.toLowerCase().includes(searchLower) ||
+        product.category.toLowerCase().includes(searchLower)
+    );
+  }
+
+  return filtered;
+};
+
+export default function ExploreScreen() {
+  const [searchText, setSearchText] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("Tous");
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [productDetailsVisible, setProductDetailsVisible] = useState(false);
+
+  // Memoized filtered products
+  const filteredProducts = useMemo(() => {
+    return filterProducts(searchText, selectedCategory);
+  }, [searchText, selectedCategory]);
+
+  // Render product item
+  const renderProduct = useCallback(
+    ({ item }: { item: typeof allProducts[0] }) => (
+      <ProductCard
+        item={item}
+        onPress={() => {
+          setSelectedProduct(item);
+          setProductDetailsVisible(true);
+        }}
+        style={{
+          borderRadius: 16,
+          backgroundColor: '#fff',
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.08,
+          shadowRadius: 12,
+          elevation: 3,
+          margin: 6,
+          padding: 4
+        }}
+        showDetails={true}
+      />
+    ),
+    []
+  );
+
+  return (
+    <View style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
+      <Header searchText={searchText} setSearchText={setSearchText} />
+
+      <ParallaxScrollView
+        headerBackgroundColor={{ light: "#F2F2F2", dark: "#1A1A1A" }}
+      >
+        {/* TITRE DE PAGE DYNAMIQUE */}
+        <View style={{ padding: 20 }}>
+          <ThemedText style={{ fontSize: 32, fontWeight: "800" }}>
+            Trouvez votre Tech
+          </ThemedText>
+          <ThemedText style={{ color: "#8E8E93", marginTop: 4 }}>
+            Explorez plus de {allProducts.length} produits
+          </ThemedText>
+        </View>
+
+        {/* FILTRE CATÉGORIES : Style "Apple Store Tabs" */}
+        <View style={{ marginBottom: 20 }}>
+          <FlatList
+            data={categories}
+            keyExtractor={(item) => item.id}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingLeft: 20 }}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                onPress={() => setSelectedCategory(item.name)}
+                style={{
+                  paddingHorizontal: 24,
+                  paddingVertical: 12,
+                  borderRadius: 15,
+                  marginRight: 12,
+                  backgroundColor:
+                    selectedCategory === item.name ? "#000" : "#F2F2F7",
+                }}
+              >
+                <ThemedText
+                  style={{
+                    fontWeight: "700",
+                    color: selectedCategory === item.name ? "#FFF" : "#000",
+                  }}
+                >
+                  {item.name}
+                </ThemedText>
+              </TouchableOpacity>
+            )}
+          />
+        </View>
+
+        {/* RÉSULTATS : Grille avec compteurs */}
+        <View style={{ paddingHorizontal: 12 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 15,
+              paddingHorizontal: 8,
+            }}
+          >
+            <ThemedText style={{ fontWeight: "600", color: "#666" }}>
+              {filteredProducts.length} modèles
+            </ThemedText>
+            <Ionicons name="options-outline" size={20} color="#000" />
+          </View>
+
+          <FlatList
+            data={filteredProducts}
+            renderItem={renderProduct}
+            keyExtractor={(item) => `explore-${item.id}`}
+            numColumns={2}
+            scrollEnabled={false}
+            contentContainerStyle={{ paddingBottom: 20 }}
+          />
+        </View>
+      </ParallaxScrollView>
+
+      <ProductDetails
+        product={selectedProduct}
+        visible={productDetailsVisible}
+        onClose={() => setProductDetailsVisible(false)}
+      />
+    </View>
+  );
+}
+

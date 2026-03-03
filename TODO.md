@@ -1,0 +1,8 @@
+- [ ] Modify constants/categories.ts: Remove the "Tous" entry.
+- [ ] Update index.tsx: Remove showCategories state and related vertical bar code.
+- [ ] Update index.tsx: Change selectedCategory initial to null.
+- [ ] Update index.tsx: Adjust filtering useEffect.
+- [ ] Update index.tsx: Simplify renderCategory logic.
+- [ ] Update index.tsx: Update Header props.
+- [ ] Update explore.tsx: Change selectedCategory initial to null.
+- [ ] Update explore.tsx: Adjust filtering useEffect.
