@@ -9,7 +9,7 @@ import ProductCard from "@/components/ProductCard";
 import ProductDetails from "@/components/ProductDetails";
 import { ThemedText } from "@/components/themed-text";
 import { categories } from "@/constants/exploreCategories";
-import { products as exploreProducts } from "@/constants/exploreProducts";
+import { products } from "@/constants/exploreProducts";
 
 export default function ExploreScreen() {
   const [searchText, setSearchText] = useState("");
@@ -18,37 +18,26 @@ export default function ExploreScreen() {
   const [productDetailsVisible, setProductDetailsVisible] = useState(false);
   const router = useRouter();
 
-  // Filter products based on search and category
   const filteredProducts = useMemo(() => {
-    let result = [...exploreProducts];
+  let result = [...(products || [])];
 
-    // Filter by category
-    if (selectedCategory !== "Tous") {
-      result = result.filter(
-        (product) =>
-          product.category.toLowerCase() === selectedCategory.toLowerCase()
-      );
-    }
+  if (selectedCategory !== "Tous") {
+    result = result.filter(
+      (p) => p.category.toLowerCase() === selectedCategory.toLowerCase()
+    );
+  }
 
-    // Filter by search text
     if (searchText.trim()) {
-      const searchLower = searchText.toLowerCase().trim();
-      result = result.filter((product) => {
-        const nameMatch = product.name.toLowerCase().includes(searchLower);
-        const categoryMatch = product.category
-          .toLowerCase()
-          .includes(searchLower);
-        const manufacturerMatch = product.manufacturer
-          ?.toLowerCase()
-          .includes(searchLower);
-        return nameMatch || categoryMatch || manufacturerMatch;
-      });
-    }
+    const searchLower = searchText.toLowerCase().trim();
+    result = result.filter((p) => 
+      p.name.toLowerCase().includes(searchLower)
+    );
+  }
 
     return result;
-  }, [searchText, selectedCategory]);
+}, [searchText, selectedCategory]);
 
-  const renderProduct = ({ item }: { item: typeof exploreProducts[0] }) => (
+  const renderProduct = ({ item }: { item: typeof products[0] }) => (
     <ProductCard
       item={item}
       onPress={() => {
@@ -68,6 +57,8 @@ export default function ExploreScreen() {
       showDetails={true}
     />
   );
+
+  console.log("INDEX DATA:", products);
 
   return (
     <View style={{ flex: 1, backgroundColor: "#FFFFFF" }}>

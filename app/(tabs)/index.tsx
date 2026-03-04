@@ -15,6 +15,7 @@ import ParallaxScrollView from "@/components/parallax-scroll-view";
 import ProductCard from "@/components/ProductCard";
 import ProductDetails from "@/components/ProductDetails";
 import { ThemedText } from "@/components/themed-text";
+import { products as localProducts } from "@/constants/exploreProducts";
 import { manufacturers } from "@/constants/manufacturers";
 import { supabase } from "@/lib/supabase";
 
@@ -25,16 +26,17 @@ export default function HomeScreen() {
   const [selectedManufacturer, setSelectedManufacturer] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [productDetailsVisible, setProductDetailsVisible] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined);
   const scrollViewRef = useRef<ScrollView>(null);
 
-  // États pour les données Supabase
-  const [products, setProducts] = useState<any[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  // États pour les données (locale par défaut, peut être remplacé par Supabase)
+  const [products, setProducts] = useState<any[]>(localProducts);
+  const [filteredProducts, setFilteredProducts] = useState<any[]>(localProducts);
+  const [loading, setLoading] = useState(false);
 
   // Duplicate manufacturers for infinite scroll effect
   const duplicatedManufacturers = useMemo(() => {
-    return [...manufacturers, ...manufacturers, ...manufacturers];
+    return [...(manufacturers || []), ...(manufacturers || []), ...(manufacturers || [])];
   }, []);
 
   // --- ÉTAPE CLÉ : FETCH DES DONNÉES DEPUIS SUPABASE ---
@@ -43,22 +45,27 @@ export default function HomeScreen() {
   }, []);
 
   async function fetchProducts() {
+    setLoading(true);
     try {
-      setLoading(true);
       // Requête SQL via le client Supabase
       const { data, error } = await supabase
         .from('products')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("ERREUR SUPABASE :", error.message);
+        return;
+      }
 
-      if (data) {
+      console.log("DONNÉES REÇUES :", data?.length || 0, "produits");
+      
+      if (data && data.length > 0) {
         setProducts(data);
         setFilteredProducts(data);
       }
-    } catch (error) {
-      console.error("Erreur lors de la récupération:", error);
+    } catch (err) {
+      console.error("ERREUR INCONNUE :", err);
     } finally {
       setLoading(false);
     }
@@ -73,9 +80,17 @@ export default function HomeScreen() {
     setFilteredProducts(result);
   }, [searchText, products]);
 
-  // Filter products based on search and manufacturer
+  // Filter products based on search, manufacturer and category
   const displayedProducts = useMemo(() => {
-    let result = [...filteredProducts];
+    let result = [...(filteredProducts || [])];
+
+    // Filter by category
+    if (selectedCategory && selectedCategory !== "Tous") {
+      result = result.filter(
+        (product) =>
+          product.category?.toLowerCase() === selectedCategory.toLowerCase()
+      );
+    }
 
     // Filter by manufacturer
     if (selectedManufacturer) {
@@ -86,7 +101,7 @@ export default function HomeScreen() {
     }
 
     return result;
-  }, [filteredProducts, selectedManufacturer]);
+  }, [filteredProducts, selectedCategory, selectedManufacturer]);
 
   // Request location permission
   useEffect(() => {
@@ -148,17 +163,21 @@ export default function HomeScreen() {
       </View>
     );
   }
+  console.log("INDEX DATA:", products); 
+// Remplacez 'products' par le nom de votre variable d'état
 
   return (
     <View style={{ flex: 1, backgroundColor: "#F9FAFB" }}>
       <ParallaxScrollView
         headerBackgroundColor={{ light: "#FFFFFF", dark: "#121212" }}
         headerImage={
-          <Header
+        <Header
             searchText={searchText}
             setSearchText={setSearchText}
             showCategories={showCategories}
             setShowCategories={setShowCategories}
+            selectedCategory={selectedCategory}
+            setSelectedCategory={setSelectedCategory}
           />
         }
       >
